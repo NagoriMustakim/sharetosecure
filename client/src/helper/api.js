@@ -8,6 +8,7 @@ export async function register(values) {
     try {
         console.log(values);
         localStorage.setItem("username", values.firstname)
+       
         const data = await axios.post('http://localhost:4000/api/v1/user/register', values)
 
         return data.data
@@ -19,6 +20,8 @@ export async function register(values) {
 
 export async function login(values, loginType) {
     try {
+        localStorage.setItem("logintype", loginType)
+
         values = await Object.assign(values, { logintype: loginType || '' })
 
         let data = await axios.post('http://localhost:4000/api/v1/user/login', values);
@@ -88,7 +91,7 @@ export async function getActivity() {
 
 export async function setbankdetails(values) {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         values = await Object.assign(values, { username: username || '' })
         const data = await axios.post('http://localhost:4000/api/v1/bank/setbankdetails', values);
         return data.data
@@ -100,7 +103,7 @@ export async function setbankdetails(values) {
 
 export async function getbankdetails() {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         const data = await axios.get('http://localhost:4000/api/v1/bank/getbankdetails', {
             params: {
                 username: username
@@ -115,7 +118,7 @@ export async function getbankdetails() {
 
 export async function setHospital(values) {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         values = await Object.assign(values, { username: username || '' })
         const data = await axios.post("http://localhost:4000/api/v1/hospital/sethospital", values)
         return data.data
@@ -127,7 +130,7 @@ export async function setHospital(values) {
 
 export async function gethospital() {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         const data = await axios.get('http://localhost:4000/api/v1/hospital/gethospital', {
             params: {
                 username: username
@@ -142,7 +145,7 @@ export async function gethospital() {
 
 export async function setpolicy(values) {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         values = await Object.assign(values, { username: username || '' })
         const data = await axios.post("http://localhost:4000/api/v1/policy/setpolicy", values)
         return data.data
@@ -152,7 +155,7 @@ export async function setpolicy(values) {
 }
 export async function getpolicy() {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
         const data = await axios.get('http://localhost:4000/api/v1/policy/getpolicy', {
             params: {
                 username: username

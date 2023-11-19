@@ -76,10 +76,11 @@ export const InsuranceProvider = () => {
 
   const bankconfirm = () => {
     let values = {
-      username: localStorage.getItem("username"),
+      username:apidata.username,
       confirmbankbyinsuranceprovider: true
     }
     let confirmStatus = updateActivity(values);
+    console.log(values);
     toast.success("Confirmation from bank by insurance Provider is done")
 
   }
@@ -209,12 +210,12 @@ export const InsuranceProvider = () => {
         </div>
       ) : null}
       {apidata && hospitalData && apidata.recalculatepolicy != true && apidata.confirmbyhospital ? (
-        <div className='border-2 w-60 ml-20'>
-          <h3 className='mt-4  ml-2 text-xl'>Confirm Request by Bank</h3>
+        <div className='border-2 w-80 ml-20'>
+          <h3 className='mt-4  ml-2 text-xl'>Confirm Request by Hospital</h3>
 
-          <h1 className='ml-2 mt-2'>Customer is Verified: {bankdata.verified ? "True" : null}</h1>
-          <h1 className='ml-2'>Customer is Active: {bankdata.active ? "True" : null}</h1>
-          <h1 className='ml-2'>Customer Credit: {bankdata.credit}</h1>
+          <h1 className='ml-2 mt-2'>Customer is Physical: {hospitalData.physical ? "True" : null}</h1>
+          <h1 className='ml-2'>Customer is Active: {hospitalData.active ? "True" : null}</h1>
+          <h1 className='ml-2'>Customer Score: {bankdata.score}</h1>
           <h1 className='ml-2'>Send to customer</h1>
 
 
