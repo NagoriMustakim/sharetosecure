@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getusername } from './username';
 // axios.defaults.baseURL = process.env.REACT_APP_DEV_SERVER;
 
 
@@ -16,10 +17,13 @@ export async function register(values) {
 
 }
 
-export async function login(values) {
+export async function login(values, loginType) {
     try {
+        values = await Object.assign(values, { logintype: loginType || '' })
+
         let data = await axios.post('http://localhost:4000/api/v1/user/login', values);
-        return data.data.message
+        localStorage.setItem("token", data.data.token)
+        return data
     } catch (error) {
         return error
     }
@@ -28,10 +32,10 @@ export async function login(values) {
 
 export async function createNewContract(values) {
     try {
-        let username = localStorage.getItem("username")
+        let username = localStorage.getItem('username')
         values = await Object.assign(values, { username: username || '' })
         const data = await axios.post('http://localhost:4000/api/v1/contract/createcontract', values);
-        return data.data
+        return data
     } catch (error) {
         return error
     }
@@ -56,18 +60,19 @@ export async function setActivity(values) {
     }
 }
 
-export async function updateActivity(values){
+export async function updateActivity(values) {
     try {
-        console.log(values);
-         const data = await axios.put('http://localhost:4000/api/v1/activity/updateactivity', values)
-         return data;
-     } catch (error) {
-         return error
-     }
+
+        const data = await axios.put('http://localhost:4000/api/v1/activity/updateactivity', values)
+        return data;
+    } catch (error) {
+        return error
+    }
 }
 export async function getActivity() {
     try {
-        let username = localStorage.getItem("username")
+        let username = await getusername()
+
         const data = await axios.get('http://localhost:4000/api/v1/activity/getactivity', {
             params: {
                 username: username
@@ -81,7 +86,7 @@ export async function getActivity() {
 
 
 
-export async function setbankdetails(values){
+export async function setbankdetails(values) {
     try {
         let username = localStorage.getItem("username")
         values = await Object.assign(values, { username: username || '' })
@@ -89,11 +94,11 @@ export async function setbankdetails(values){
         return data.data
     } catch (error) {
         return error
-    } 
+    }
 }
 
 
-export async function getbankdetails(){
+export async function getbankdetails() {
     try {
         let username = localStorage.getItem("username")
         const data = await axios.get('http://localhost:4000/api/v1/bank/getbankdetails', {
@@ -104,5 +109,57 @@ export async function getbankdetails(){
         return data
     } catch (error) {
         return error
-    } 
+    }
+}
+
+
+export async function setHospital(values) {
+    try {
+        let username = localStorage.getItem("username")
+        values = await Object.assign(values, { username: username || '' })
+        const data = await axios.post("http://localhost:4000/api/v1/hospital/sethospital", values)
+        return data.data
+    } catch (error) {
+        return error
+    }
+}
+
+
+export async function gethospital() {
+    try {
+        let username = localStorage.getItem("username")
+        const data = await axios.get('http://localhost:4000/api/v1/hospital/gethospital', {
+            params: {
+                username: username
+            }
+        })
+        return data
+    } catch (error) {
+        return error
+    }
+}
+
+
+export async function setpolicy(values) {
+    try {
+        let username = localStorage.getItem("username")
+        values = await Object.assign(values, { username: username || '' })
+        const data = await axios.post("http://localhost:4000/api/v1/policy/setpolicy", values)
+        return data.data
+    } catch (error) {
+        return error
+    }
+}
+export async function getpolicy() {
+    try {
+        let username = localStorage.getItem("username")
+        const data = await axios.get('http://localhost:4000/api/v1/policy/getpolicy', {
+            params: {
+                username: username
+            }
+        })
+        return data
+    } catch (error) {
+        return error
+    }
 }

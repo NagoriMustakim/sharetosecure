@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import { Label } from '../components/Label'
 import { Activity } from '../components/Activity';
-import { getContract, getbankdetails, setActivity, updateActivity } from '../helper/api';
+import { getContract, getbankdetails, gethospital, setActivity, setpolicy, updateActivity } from '../helper/api';
 import useFetch from '../hooks/fetch.hook';
+import toast, { Toaster } from 'react-hot-toast';
+import { useFormik } from 'formik';
+import { useNavigate } from 'react-router-dom';
+import { getusername } from '../helper/username';
 
 export const InsuranceProvider = () => {
+  const navigate = useNavigate()
   const [{ apidata }, setDatta] = useFetch();
-  // const [{apibankdata}, setbankData] = useBank() 
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState('');
-  const [bankdata, setBankData] = useState('');
-
+  const [bankdata, setBankData] = useState(false);
+  const [hospitalData, setHospitalData] = useState(false)
+  const [modal, setModal] = useState(false)
   const takeAction = async () => {
     const getcontractdata = getContract()
     getcontractdata.then((result) => {
@@ -27,35 +32,114 @@ export const InsuranceProvider = () => {
 
 
   const Confirm = () => {
+
     let values = {
-      username: localStorage.getItem("username"),
+      username: data.username,
       confirmbyinsuranceprovider: true
     }
     let confirmStatus = updateActivity(values);
+    confirmStatus.then(result => {
+      if (result.status == 201)
+        toast.success("Insurance Provider confirmed")
+    })
     setShowModal(false)
   }
-  useEffect(()=>{
-    async function getbankdata(){
+  useEffect(() => {
+    let istoken = localStorage.getItem('token')
+    if (!istoken) {
+      navigate('/login')
+    }
+    async function getbankdata() {
       let bankpromises = getbankdetails()
       bankpromises.then((result) => {
-        setBankData(result.data)
+        if (result.status == 201) {
+          setBankData(result.data)
+        }
       }).catch((err) => {
         console.log(err);
       })
     }
 
-    getbankdata() 
-  }, [ ])
+    getbankdata()
+  }, [])
 
-const bankconfirm = ()=>{
-  let values = {
-    username: localStorage.getItem("username"),
-    confirmbankbyinsuranceprovider: true
+  useEffect(() => {
+    async function gethospitaldetails() {
+      let hospitalPromises = gethospital()
+      hospitalPromises.then(result => {
+        if (result.status == 201)
+          setHospitalData(result.data)
+      })
+    }
+    gethospitaldetails()
+  }, [])
+
+  const bankconfirm = () => {
+    let values = {
+      username: localStorage.getItem("username"),
+      confirmbankbyinsuranceprovider: true
+    }
+    let confirmStatus = updateActivity(values);
+    toast.success("Confirmation from bank by insurance Provider is done")
+
   }
-  let confirmStatus = updateActivity(values); 
-}
+
+  const recalculatepolicyModal = () => {
+    setModal(true)
+
+  }
+  const closedrecalucate = () => {
+    setModal(false)
+  }
+
+
+  const formik = useFormik({
+    initialValues: {
+      premiumpayment: '',
+      policyname: '',
+      insurancedate: '',
+      maturitydate: '',
+      finalpremiumoffer: '',
+      assured: ''
+    },
+    validateOnBlur: false,
+    validateOnChange: false,
+    onSubmit: async values => {
+      let sethospitaldetailspromises = await setpolicy(values)
+      let valuess = {
+        username: apidata.username,
+        recalculatepolicy: true
+      }
+      let response = updateActivity(valuess)
+      if (response.status == 201) {
+      }
+      toast.success('Policy re calculated');
+      setModal(false)
+    }
+  })
+
+  const invokepolicy = () => {
+    let valuess = {
+      username: apidata.username,
+      invokeclaimbyinsuranceprovider: true
+    }
+    let response = updateActivity(valuess)
+
+    toast.success('Policy send to hospital');
+
+  }
+
+  const submitclaim = () => {
+    let valuess = {
+      username: apidata.username,
+      confirmclaimrequrestbyinsuranceprovider: true
+    }
+    let response = updateActivity(valuess)
+    toast.success('Submited details');
+  }
   return (
     <div>
+      <Toaster position='top-center' reverseOrder={false}></Toaster>
       <Label name={"InsuranceProvider"} />
       {apidata && apidata.confirmbyinsuranceprovider != true ? (
         <div className='border-2 w-60 ml-20'>
@@ -68,10 +152,10 @@ const bankconfirm = ()=>{
                 <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-gray-100 outline-none focus:outline-none">
                   <div className="relative p-6 flex-auto">
                     <div className="rounded-lg px-8 pb-8 w-full">
-                      <label className="block text-black mb-2 text-xl">
-                        Offer
+                      <label className="flex justify-center items-center block text-black mb-2 text-xl">
+                        OFFER
                       </label>
-                      <label className='text-xl'>Created by: Utsav</label>
+                      <label className='text-xl'>Created by: {apidata.username}</label>
                     </div>
                     <div>Addhar Card Number: {data.aadhar}</div>
                     <div>Sex: {data.sex}</div>
@@ -111,21 +195,118 @@ const bankconfirm = ()=>{
 
 
 
-      {bankdata ? (
+      {apidata && bankdata && apidata.confirmbankbyinsuranceprovider != true && apidata.confirmbybank ? (
         <div className='border-2 w-60 ml-20'>
-        <h3 className='mt-4  ml-2 text-xl'>Confirm Request by Bank</h3>
+          <h3 className='mt-4  ml-2 text-xl'>Confirm Request by Bank</h3>
 
-          <h1 className='ml-2 mt-2'>Customer is Verified: {bankdata.verified? "True":null}</h1>
-          <h1 className='ml-2'>Customer is ACtive{bankdata.active? "True": null}</h1>
+          <h1 className='ml-2 mt-2'>Customer is Verified: {bankdata.verified ? "True" : null}</h1>
+          <h1 className='ml-2'>Customer is ACtive{bankdata.active ? "True" : null}</h1>
           <h1 className='ml-2'>Customer Credit: {bankdata.credit}</h1>
+          <h1 className='ml-2'>Send to medical Underwrite</h1>
 
 
-        <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={takeAction}>Take Action</button>
-        </div> 
-        ) : null}
+          <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={bankconfirm}>Take Action</button>
+        </div>
+      ) : null}
+      {apidata && hospitalData && apidata.recalculatepolicy != true && apidata.confirmbyhospital ? (
+        <div className='border-2 w-60 ml-20'>
+          <h3 className='mt-4  ml-2 text-xl'>Confirm Request by Bank</h3>
+
+          <h1 className='ml-2 mt-2'>Customer is Verified: {bankdata.verified ? "True" : null}</h1>
+          <h1 className='ml-2'>Customer is Active: {bankdata.active ? "True" : null}</h1>
+          <h1 className='ml-2'>Customer Credit: {bankdata.credit}</h1>
+          <h1 className='ml-2'>Send to customer</h1>
 
 
-        <Activity></Activity>
+          <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={recalculatepolicyModal}>Take Action</button>
+          {
+            modal ? (
+              <form onSubmit={formik.handleSubmit} className="flex justify-center items-center overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+                <div className="relative w-auto my-6 mx-auto max-w-3xl">
+                  <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-gray-100 outline-none focus:outline-none">
+                    <div className="relative p-6 flex-auto">
+                      <div className="rounded-lg px-8 pb-8 w-full">
+                        <label className="block text-black mb-2 text-xl">
+                          Recalcualte Policy
+                        </label>
+                        <input className="shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="Premium Payment Recived - True/False"
+                          {...formik.getFieldProps('premiumpayment')}
+                          required
+                        />
+                        <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="policy name"
+                          {...formik.getFieldProps('policyname')}
+                          required
+                        />
+                        <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="Insurance Date"
+                          {...formik.getFieldProps('insurancedate')}
+                          required
+                        />
+                        <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="Maturity Date"
+                          {...formik.getFieldProps('maturitydate')}
+                          required
+                        />
+                        <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="Final Premium offer"
+                          {...formik.getFieldProps('finalpremiumoffer')}
+                          required
+                        />
+                        <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
+                          type="text"
+                          placeholder="Final Sum Assured (INR)"
+                          {...formik.getFieldProps('assured')}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center mb-4  border-solid rounded-b">
+                      <button
+                        className="bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1"
+                        type="submit"
+                      >
+                        Issue Policy
+                      </button>
+                      <button
+                        className="bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-4 mb-1"
+                        type="button"
+                        onClick={closedrecalucate}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            ) : ""
+          }
+        </div>
+      ) : null}
+      {apidata && apidata.invokeclaimbyinsuranceprovider != true && apidata.confirmpolicybycustomer ? (
+        <div className='border-2 w-80 ml-20'>
+          <div className='text-xl'>{apidata.username} has confirm policy</div>
+          <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={invokepolicy}>Take Action</button>
+
+        </div>
+      ) : null}
+      {apidata && apidata.confirmclaimrequrestbyinsuranceprovider != true && apidata.confirminvokeclaimbyhospital ? (
+        <div className='border-2 w-80 ml-20'>
+          <div className='text-xl'>Submit claim Details</div>
+          <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={submitclaim}>Take Action</button>
+
+        </div>
+      ) : null}
+
+
+      <Activity></Activity>
     </div>
 
   )

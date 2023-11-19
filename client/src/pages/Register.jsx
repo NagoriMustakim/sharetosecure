@@ -6,7 +6,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import { registerValidation } from '../helper/userValid';
 import { register } from '../helper/api';
 export const Register = () => {
-    const [loginType, setLoginype] = useState('Customer');
     const navigate = useNavigate()
     const formik = useFormik({
         initialValues: {
@@ -21,7 +20,7 @@ export const Register = () => {
         validateOnBlur: false,
         validateOnChange: false,
         onSubmit: async values => {
-            values = await Object.assign(values, { logintype: loginType || '' })
+            values = await Object.assign(values, { logintype: 'Customer' || '' })
             let registerPromise = register(values)
             toast.promise(registerPromise, {
                 loading: 'Creating...',
@@ -29,11 +28,7 @@ export const Register = () => {
                 error: <b>Could not Register.</b>
             });
             registerPromise.then(function () {                
-                if (loginType === "Bank") navigate('/bank');
-                else if (loginType === "Hospital") navigate("/hospital");
-                else if (loginType === "Doctor") navigate("/doctor");
-                else if (loginType === "InsuranceProvider") navigate("/InsuranceProvider");
-                else if (loginType === "Customer") navigate("/customer");
+                navigate("/customer");
             });
         }
     })
@@ -47,11 +42,6 @@ export const Register = () => {
             x.type = "password";
         }
     }
-
-    const handleSelectChange = (event) => {
-        setLoginype(event.target.value);
-    };
-
 
     return (
         <section className={`py-1 ${styles.registerbg}`} >
@@ -130,15 +120,7 @@ export const Register = () => {
 
                             <hr className="mt-6 border-b-1 border-blueGray-300" />
 
-                            <label for="cars" className='mr-2  uppercase text-blueGray-600 text-xs font-bold mb-2'>Login As:</label>
-
-                            <select name="cars" id="cars" onChange={handleSelectChange} value={loginType}>
-                                <option value="Customer">Customer</option>
-                                <option value="InsuranceProvider">insurance Company</option>
-                                <option value="Hospital">Hospital</option>
-                                <option value="Doctor">Doctor</option>
-                                <option value="Bank">Bank</option>
-                            </select>
+                          
 
                             <div className='flex flex-col items-center mt-5'>
                                 <button className="bg-blue-500 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150" type='submit'>

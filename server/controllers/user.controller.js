@@ -24,28 +24,35 @@ async function register(req, res) {
 async function login(req, res) {
     try {
         const user = await userModal.findOne({ email: req.body.email });
+        
         if (!user) {
-            return res
-                .status(200)
-                .send({ message: "user not found", success: false });
+            return res.status(200).send({ message: "User not found", success: false });
         }
+
         const isMatch = await bcrypt.compare(req.body.password, user.password);
+
         if (!isMatch) {
-            return res
-                .status(200)
-                .send({ message: "Invlid Email or Password", success: false });
+            return res.status(200).send({ message: "Invalid Email or Password", success: false });
         }
+
+        // Validate login type
+        if (user.logintype !== req.body.logintype) {
+            return res.status(200).send({ message: "Invalid login type", success: false });
+        }
+
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
             expiresIn: "1d",
         });
-        res.status(200).send({ message: "Login Success", success: true, token });
+
+        res.status(201).send({ message: "Login Success", success: true, token });
     } catch (error) {
         console.log(error);
         res.status(500).send({ message: `Error in Login ${error.message}` });
     }
 }
+
 async function getuser(req, res) {
-    
+
 }
 
 module.exports = { register, login, getuser }

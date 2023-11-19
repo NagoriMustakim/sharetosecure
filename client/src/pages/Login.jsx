@@ -16,24 +16,25 @@ export const Login = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async values => {
-      let loginPromises = login(values);
-      toast.promise(loginPromises, {
-        loading: 'Login...',
-        success: <b>login Successfully...!</b>,
-        error: <b>Could not login. try again</b>
-      }).then((result) => {
-        if (result === "user not found") {
+      let loginPromises = login(values, loginType);
+      loginPromises.then((result) => {
+        if (result.data.message === "user not found") {
           toast.error('User not found. Please register.');
           setTimeout(() => {
             navigate("/register");
           }, 3000);
         }
         else {
-          if (loginType === "Bank") navigate('/bank');
-          else if (loginType === "Hospital") navigate("/hospital");
-          else if (loginType === "Doctor") navigate("/doctor");
-          else if (loginType === "InsuranceProvider") navigate("/InsuranceProvider");
-          else if (loginType === "Customer") navigate("/customer");
+          if (result.status == 201) {
+            if (loginType === "Bank") navigate('/bank');
+            else if (loginType === "Hospital") navigate("/hospital");
+            else if (loginType === "Doctor") navigate("/doctor");
+            else if (loginType === "InsuranceProvider") navigate("/InsuranceProvider");
+            else if (loginType === "Customer") navigate("/customer");
+          }
+          else {
+            toast.error(result.data.message);
+          }
         }
       }).catch((error) => {
         console.log(error);

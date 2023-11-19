@@ -22,7 +22,6 @@ async function getbank(req, res) {
     
     try {
          let getbankstatus = await bankSchema.findOne({ username: req.query.username })
-         console.log(getbankstatus);
         if (!getbankstatus) return res.status(200).send("bank deatils does not Exist")
        return res.status(201).send(getbankstatus);
     } catch (error) {

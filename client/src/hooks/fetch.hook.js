@@ -4,6 +4,7 @@ import { getActivity, getbankdetails } from "../helper/api";
 
 
 export default function useFetch() {
+    
     const [getData, setDatta] = useState({ apidata: undefined });
 
     useEffect(() => {

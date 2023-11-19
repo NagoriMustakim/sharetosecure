@@ -7,6 +7,8 @@ const router = require('./routes/user.routes')
 const contractrouter = require('./routes/contract.routes')
 const activityrouter = require('./routes/activity.routes')
 const bankrouter = require('./routes/bank.routes')
+const hospitalrouter = require('./routes/hospital.routes')
+const policyrouter = require('./routes/policy.routes')
 require('dotenv').config()
 
 
@@ -20,6 +22,8 @@ app.use('/api/v1/user', router)
 app.use('/api/v1/contract', contractrouter)
 app.use('/api/v1/activity', activityrouter) 
 app.use('/api/v1/bank', bankrouter)
+app.use('/api/v1/hospital', hospitalrouter)
+app.use('/api/v1/policy', policyrouter)
 connectDB()
 app.get('/', (req, res) => {
     res.send("welocome to homepage")
