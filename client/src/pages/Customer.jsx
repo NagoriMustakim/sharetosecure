@@ -7,16 +7,24 @@ import toast, { Toaster } from 'react-hot-toast';
 import useFetch from '../hooks/fetch.hook';
 import { getusername } from '../helper/username';
 import { useNavigate } from 'react-router-dom';
-
+import { Connectwallet } from '../components/Connectwallet';
 export const Customer = () => {
   const navigate = useNavigate();
   const [{ apidata }, setDatta] = useFetch();
   const [getpolicydetails, setgetpolicydetails] = useState(false)
-
   const [showModal, setShowModal] = useState(false);
   const [modal, setModal] = useState(false)
+  const [getSmartContract, setSmartContract] = useState();
+  const [walletAddress, setWalletAddress] = useState()
+
   const createContract = () => {
-    setShowModal(true);
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      setShowModal(true);
+    }
   }
 
   const closeCreateContract = () => {
@@ -24,7 +32,13 @@ export const Customer = () => {
   }
 
   const confirmpolicy = () => {
-    setModal(true)
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      setModal(true)
+    }
   }
   const confirmpolicycancel = () => {
     setModal(false)
@@ -43,6 +57,7 @@ export const Customer = () => {
     }
     getpol()
   }, [])
+
   const formik = useFormik({
     initialValues: {
       aadhar: '',
@@ -61,41 +76,52 @@ export const Customer = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async values => {
-      let contractPromises = createNewContract(values);
-      contractPromises.then(result => {
-        if (result.status == 200) {
-          toast.success('Contract Already Exits with same value');
-        }
-        else if (result.status == 201) {
-          let username = localStorage.getItem("username")
-          let valuess = {
-            username,
-            createcontract: true,
+      try {
+        let setDeatils = await getSmartContract.setDeatils(values.insuranceprovider, values.bank, values.hospital)
+        await setDeatils.wait();
+        values = values = Object.assign(values, { userwalletaddress: walletAddress || '' })
+        let contractPromises = createNewContract(values);
+        contractPromises.then(result => {
+          if (result.status == 200) {
+            toast.success('Contract Already Exits with same value');
           }
-          let activitystatus = setActivity(valuess);
-          activitystatus.then(res => {
-            if (res.status == 200) {
-              toast.success('Activity Already Updated');
+          else if (result.status == 201) {
+            let username = localStorage.getItem("username")
+            let valuess = {
+              username,
+              createcontract: true,
             }
-            if (res.status == 201) {
-              toast.success('Contract Created Sucessfully');
-            }
-            else {
-              toast.error("Internal server error")
-            }
-          })
-        }
-        else {
-          toast.error("Internal server error")
-        }
-      })
+            let activitystatus = setActivity(valuess);
+            activitystatus.then(res => {
+              if (res.status == 200) {
+                toast.success('Activity Already Updated');
+              }
+              if (res.status == 201) {
+                toast.success('Contract Created Sucessfully');
+              }
+              else {
+                toast.error("Internal server error")
+              }
+            })
+          }
+          else {
+            toast.error("Internal server error")
+          }
+        })
 
-      setShowModal(false)
+        setShowModal(false)
+      } catch (error) {
+        toast.error("Please try again user rejected")
+        return null
+      }
+
     }
 
   })
 
-  const confirmpolicybycustomer = () => {
+  const confirmpolicybycustomer = async () => {
+    let setconfirmpolicy = await getSmartContract.setConfirmPolicy();
+    await setconfirmpolicy.wait()
     let values = {
       username: apidata.username,
       confirmpolicybycustomer: true
@@ -108,11 +134,16 @@ export const Customer = () => {
     })
   }
   return (
-    <div>
+    <div >
       <Toaster position='top-center' reverseOrder={false}></Toaster>
       <h1 className='ml-20 mt-16 text-xl'>Customer: {localStorage.getItem("username")}</h1>
+      <Connectwallet
+        setSmartContract={setSmartContract}
+        walletAddress={walletAddress}
+        setWalletAddress={setWalletAddress}
+      />
       {apidata && apidata.confirmpolicybycustomer != true && apidata.recalculatepolicy ? (<>
-        <button type='button' className='ml-16 bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={confirmpolicy}>Confirm Policy</button>
+        <button type='button' className='ml-16 bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-20 mt-6' onClick={confirmpolicy}>Confirm Policy</button>
         {
           modal ? (
             <div className='flex justify-center items-center overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none'>
@@ -178,7 +209,7 @@ export const Customer = () => {
                       />
                       <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
                         type="text"
-                        placeholder="Bank Name"
+                        placeholder="Bank Address like 0x39b62D34744f65Dd1ccE4A56558ae91133476C6E"
                         {...formik.getFieldProps('bank')}
                         required
                       />
@@ -190,7 +221,7 @@ export const Customer = () => {
                       />
                       <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
                         type="text"
-                        placeholder="Insurance Provider Name"
+                        placeholder="Insurance Provider Address like 0x39b62D34744f65Dd1ccE4A56558ae91133476C6E"
                         {...formik.getFieldProps('insuranceprovider')}
                         required
                       />
@@ -202,7 +233,7 @@ export const Customer = () => {
                       />
                       <input className="mt-2 shadow appearance-none  rounded w-full py-2 px-3 text-tt ${isCodeInvalid ? 'border-red-500' : 'border-gray-30"
                         type="text"
-                        placeholder="Hospital Name"
+                        placeholder="Hospital Address like 0x39b62D34744f65Dd1ccE4A56558ae91133476C6E"
                         {...formik.getFieldProps('hospital')}
                         required
                       />

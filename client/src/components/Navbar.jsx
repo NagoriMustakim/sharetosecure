@@ -6,7 +6,7 @@ export const Navbar = ({ toggleMode, mode }) => {
     const getSearch = (e) => {
         let s = e.target.value
         setSearch(s);
-        console.log(s);
+    
         }
     return (
         <body >

@@ -7,6 +7,7 @@ import useFetch from '../hooks/fetch.hook';
 import { useFormik } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import useGetch from '../hooks/get.hook';
+import { Connectwallet } from '../components/Connectwallet';
 
 export const Hospital = () => {
   const [{ username }, setuser] = useGetch();
@@ -14,8 +15,16 @@ export const Hospital = () => {
 
   const [{ apidata }, setDatta] = useFetch();
   const [showModal, setShowModal] = useState(false);
+  const [getSmartContract, setSmartContract] = useState();
+  const [walletAddress, setWalletAddress] = useState()
   const createContract = () => {
-    setShowModal(true);
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      setShowModal(true);
+    }
   }
 
   const closeCreateContract = () => {
@@ -38,30 +47,56 @@ export const Hospital = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async values => {
-      let sethospitaldetailspromises = await setHospital(values)
-      let valuess = {
-        username: username,
-        confirmbyhospital: true
+      try {
+        let userwalletaddress = username.userwalletaddress;
+        let setHospital = await getSmartContract.setHospital(userwalletaddress, true, values.score)
+        await setHospital.wait()
+        let sethospitaldetailspromises = await setHospital(values)
+        let valuess = {
+          username: username.username,
+          confirmbyhospital: true
+        }
+        let response = updateActivity(valuess)
+        toast.success('Medical Health updated');
+        setShowModal(false)
+      } catch (error) {
+        toast.error("Please try again")
       }
-      let response = updateActivity(valuess)
-      toast.success('Medical Health updated');
-      setShowModal(false)
     }
   })
 
-  const submitclaimrequest = ()=>{
-    let valuess = {
-      username: username,
-      confirminvokeclaimbyhospital: true
+  const submitclaimrequest = async() => {
+    try {
+      if (!getSmartContract && !walletAddress) {
+        toast.error("please connect to wallet")
+        return null;
+      }
+      else {
+      let userwalletaddress = username.userwalletaddress;
+
+        let setclaimbyhospital = await  getSmartContract.setClaimByHospital(userwalletaddress)
+        await setclaimbyhospital.wait()
+        let valuess = {
+          username: username.username,
+          confirminvokeclaimbyhospital: true
+        }
+        let response = updateActivity(valuess)
+        toast.success('Request claimed');
+      }
+    } catch (error) {
+      toast.error("please try again")
     }
-    let response = updateActivity(valuess)
-    toast.success('Request claimed');
+    
   }
   return (
     <div>
       <Toaster position='top-center' reverseOrder={false}></Toaster>
       <Label name={"Hospital"} />
-
+      <Connectwallet
+        setSmartContract={setSmartContract}
+        walletAddress={walletAddress}
+        setWalletAddress={setWalletAddress}
+      />
       {apidata && apidata.confirmbyhospital != true && apidata.confirmbankbyinsuranceprovider ? (
         <div className='border-2 ml-20'>
           <h1 className='mt-4  ml-2 text-2xl'>Insurance Provider called Hospital to Underwrite</h1>
@@ -124,11 +159,11 @@ export const Hospital = () => {
 
 
       {apidata && apidata.invokeclaimbyinsuranceprovider && apidata.confirminvokeclaimbyhospital != true ? (
-       <div className='border-2 w-80 ml-20'>
-       <div className='text-xl'>Submit Claim Request</div>
-       <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={submitclaimrequest}>Take Action</button>
+        <div className='border-2 w-80 ml-20'>
+          <div className='text-xl'>Submit Claim Request</div>
+          <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={submitclaimrequest}>Take Action</button>
 
-     </div>
+        </div>
       ) : null}
       <Activity />
     </div>

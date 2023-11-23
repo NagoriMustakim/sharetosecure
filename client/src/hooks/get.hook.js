@@ -12,7 +12,7 @@ export default function useGetch() {
             try {
                 let response = await getContract()
                 if (response) {
-                    setuser({ username: response.username });
+                    setuser({ username: response });
                 
                 }
             } catch (error) {

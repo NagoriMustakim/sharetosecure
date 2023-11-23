@@ -13,7 +13,9 @@ contract ShareToSecure {
         bool insuranceProviderDone;
         bool bankDone;
         bool hospitalDone;
+        bool doctorDone;
     }
+
     struct InvokeClaim {
         string reason;
         address hospital;
@@ -113,6 +115,12 @@ contract ShareToSecure {
     function setClaimByHospital(address customer) public {
         InvokeClaim storage invokeclaim =  addressToInvokeClaim[customer];
         invokeclaim.ClaimVerificationFromHospital = true;
+    }
+
+    //doctor call
+    function setClaimByDoctor(address customer, bool doctorDone) public{
+        customerDetails storage customerdetails = addressToCustomerDetails[customer];
+        customerdetails.doctorDone = doctorDone;
     }
 
     //insuranceProvider call

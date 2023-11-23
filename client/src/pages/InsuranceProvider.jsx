@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useFormik } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import { getusername } from '../helper/username';
+import { Connectwallet } from '../components/Connectwallet';
 
 export const InsuranceProvider = () => {
   const navigate = useNavigate()
@@ -16,14 +17,23 @@ export const InsuranceProvider = () => {
   const [bankdata, setBankData] = useState(false);
   const [hospitalData, setHospitalData] = useState(false)
   const [modal, setModal] = useState(false)
+  const [getSmartContract, setSmartContract] = useState();
+  const [walletAddress, setWalletAddress] = useState()
+  const [reason, setReason] = useState('');
   const takeAction = async () => {
-    const getcontractdata = getContract()
-    getcontractdata.then((result) => {
-      setData(result)
-    }).catch((err) => {
-      console.log(err);
-    })
-    setShowModal(true);
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      const getcontractdata = getContract()
+      getcontractdata.then((result) => {
+        setData(result)
+      }).catch((err) => {
+        toast.error("please try again")
+      })
+      setShowModal(true);
+    }
   }
 
   const closetakeAction = () => {
@@ -31,18 +41,25 @@ export const InsuranceProvider = () => {
   }
 
 
-  const Confirm = () => {
-
-    let values = {
-      username: data.username,
-      confirmbyinsuranceprovider: true
+  const Confirm = async () => {
+    try {
+      let userwalletaddress = await data.userwalletaddress
+      let setinsuranceProvider = await getSmartContract.setinsuranceProvider(userwalletaddress, true);
+      await setinsuranceProvider.wait();
+      let values = {
+        username: data.username,
+        confirmbyinsuranceprovider: true
+      }
+      let confirmStatus = updateActivity(values);
+      confirmStatus.then(result => {
+        if (result.status == 201)
+          toast.success("Insurance Provider confirmed")
+      })
+      setShowModal(false)
+    } catch (error) {
+      toast.error("please try again")
     }
-    let confirmStatus = updateActivity(values);
-    confirmStatus.then(result => {
-      if (result.status == 201)
-        toast.success("Insurance Provider confirmed")
-    })
-    setShowModal(false)
+
   }
   useEffect(() => {
     let istoken = localStorage.getItem('token')
@@ -56,7 +73,7 @@ export const InsuranceProvider = () => {
           setBankData(result.data)
         }
       }).catch((err) => {
-        console.log(err);
+        toast.error("please try again")
       })
     }
 
@@ -76,17 +93,22 @@ export const InsuranceProvider = () => {
 
   const bankconfirm = () => {
     let values = {
-      username:apidata.username,
+      username: apidata.username,
       confirmbankbyinsuranceprovider: true
     }
     let confirmStatus = updateActivity(values);
-    console.log(values);
     toast.success("Confirmation from bank by insurance Provider is done")
 
   }
 
   const recalculatepolicyModal = () => {
-    setModal(true)
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      setModal(true)
+    }
 
   }
   const closedrecalucate = () => {
@@ -106,42 +128,78 @@ export const InsuranceProvider = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async values => {
-      let sethospitaldetailspromises = await setpolicy(values)
-      let valuess = {
-        username: apidata.username,
-        recalculatepolicy: true
+      try {
+        let contractdata = await getContract()
+        let userwa = contractdata.userwalletaddress
+        let setRecalculatePolicy = await getSmartContract.setRecalculatePolicy(userwa)
+        await setRecalculatePolicy.wait()
+        let sethospitaldetailspromises = await setpolicy(values)
+        let valuess = {
+          username: apidata.username,
+          recalculatepolicy: true
+        }
+        let response = updateActivity(valuess)
+        toast.success('Policy re calculated');
+        setModal(false)
+      } catch (error) {
+        toast.error("please try again")
       }
-      let response = updateActivity(valuess)
-      if (response.status == 201) {
-      }
-      toast.success('Policy re calculated');
-      setModal(false)
+
     }
   })
-
-  const invokepolicy = () => {
-    let valuess = {
-      username: apidata.username,
-      invokeclaimbyinsuranceprovider: true
+  const handleInputChange = (event) => {
+    setReason(event.target.value);
+  };
+  const invokepolicy = async () => {
+    try {
+      if (!reason) {
+        toast.error("please enter the reason")
+      }
+      else {
+        let contractdata = await getContract()
+        let userwa = contractdata.userwalletaddress
+        let setinvokeclaim = await getSmartContract.setInvokeClaim(userwa, contractdata.insuranceprovider, reason)
+        await setinvokeclaim.wait()
+        let valuess = {
+          username: apidata.username,
+          invokeclaimbyinsuranceprovider: true
+        }
+        let response = updateActivity(valuess)
+        toast.success('Policy send to hospital');
+      }
+    } catch (error) {
+      toast.error("Please try again")
     }
-    let response = updateActivity(valuess)
 
-    toast.success('Policy send to hospital');
 
   }
 
-  const submitclaim = () => {
-    let valuess = {
-      username: apidata.username,
-      confirmclaimrequrestbyinsuranceprovider: true
+  const submitclaim = async () => {
+    try {
+      let contractdata = await getContract()
+      let userwa = contractdata.userwalletaddress
+      let setclaimrequestconfirm = await getSmartContract.setClaimRequestConfirm(userwa)
+      await setclaimrequestconfirm.wait()
+      let valuess = {
+        username: apidata.username,
+        confirmclaimrequrestbyinsuranceprovider: true
+      }
+      let response = updateActivity(valuess)
+      toast.success('Submited details');
+    } catch (error) {
+      toast.success("Please try again")
     }
-    let response = updateActivity(valuess)
-    toast.success('Submited details');
+
   }
   return (
     <div>
       <Toaster position='top-center' reverseOrder={false}></Toaster>
       <Label name={"InsuranceProvider"} />
+      <Connectwallet
+        setSmartContract={setSmartContract}
+        walletAddress={walletAddress}
+        setWalletAddress={setWalletAddress}
+      />
       {apidata && apidata.confirmbyinsuranceprovider != true ? (
         <div className='border-2 w-60 ml-20'>
           <h3 className='mt-4  ml-2 text-xl'>{apidata ? `${apidata.username} Created Contract` : null}</h3>
@@ -215,7 +273,7 @@ export const InsuranceProvider = () => {
 
           <h1 className='ml-2 mt-2'>Customer is Physical: {hospitalData.physical ? "True" : null}</h1>
           <h1 className='ml-2'>Customer is Active: {hospitalData.active ? "True" : null}</h1>
-          <h1 className='ml-2'>Customer Score: {bankdata.score}</h1>
+          <h1 className='ml-2'>Customer Score: {hospitalData.score}</h1>
           <h1 className='ml-2'>Send to customer</h1>
 
 
@@ -294,12 +352,20 @@ export const InsuranceProvider = () => {
       {apidata && apidata.invokeclaimbyinsuranceprovider != true && apidata.confirmpolicybycustomer ? (
         <div className='border-2 w-80 ml-20'>
           <div className='text-xl'>{apidata.username} has confirm policy</div>
+          <input
+            type="text"
+            placeholder='Enter the reason'
+            className='border-2 rounded mt-2 mb-2 text-xl bg-blue-100'
+            value={reason}
+            onChange={handleInputChange}
+          />
+
           <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={invokepolicy}>Take Action</button>
 
         </div>
       ) : null}
       {apidata && apidata.confirmclaimrequrestbyinsuranceprovider != true && apidata.confirminvokeclaimbyhospital ? (
-        <div className='border-2 w-80 ml-20'>
+        <div className='border-2 w-80 ml-20 mt-4'>
           <div className='text-xl'>Submit claim Details</div>
           <button type='button' className='bg-gray-400 font-bold uppercase rounded px-6 py-2 text-sm outline-none focus:outline-none ml-2 mt-6' onClick={submitclaim}>Take Action</button>
 

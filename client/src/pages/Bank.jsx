@@ -7,14 +7,23 @@ import { useFormik } from 'formik';
 import useFetch from '../hooks/fetch.hook';
 import { useNavigate } from 'react-router-dom';
 import useGetch from '../hooks/get.hook';
+import { Connectwallet } from '../components/Connectwallet';
 export const Bank = () => {
   const navigate = useNavigate()
   const [{ username }, setuser] = useGetch();
-
   const [{ apidata }, setDatta] = useFetch();
   const [showModal, setShowModal] = useState(false);
+  const [getSmartContract, setSmartContract] = useState();
+  const [walletAddress, setWalletAddress] = useState()
+
   const createContract = () => {
-    setShowModal(true);
+    if (!getSmartContract && !walletAddress) {
+      toast.error("please connect to wallet")
+      return null;
+    }
+    else {
+      setShowModal(true);
+    }
   }
 
   const closeCreateContract = () => {
@@ -35,15 +44,23 @@ export const Bank = () => {
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async values => {
-      let setbankdetailspromises = await setbankdetails(values)
-      let valuess = {
-        username: username,
-        confirmbybank: true
+      try {
+        let userwalletaddress = username.userwalletaddress
+        let setBank = await getSmartContract.setBank(userwalletaddress, true, values.credit)
+        await setBank.wait()
+        let setbankdetailspromises = await setbankdetails(values)
+        let valuess = {
+          username: username.username,
+          confirmbybank: true
+        }
+        let response = updateActivity(valuess)
+        toast.success('Financial Health updated');
+  
+        setShowModal(false)
+      } catch (error) {
+        toast.error("please try again")
       }
-      let response = updateActivity(valuess)
-      toast.success('Financial Health updated');
-
-      setShowModal(false)
+     
     }
   })
 
@@ -51,6 +68,11 @@ export const Bank = () => {
     <div>
       <Toaster position='top-center' reverseOrder={false}></Toaster>
       <Label name={"Bank"} />
+      <Connectwallet
+        setSmartContract={setSmartContract}
+        walletAddress={walletAddress}
+        setWalletAddress={setWalletAddress}
+      />
       {apidata && apidata.confirmbybank != true && apidata.confirmbyinsuranceprovider ? (
         <div className='border-2 ml-20'>
           <h1 className='mt-4  ml-2 text-2xl'>Insurance Provider called bank to Bank Underwrite</h1>

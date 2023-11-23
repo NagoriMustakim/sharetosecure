@@ -8,6 +8,7 @@ async function setHospital(req, res) {
         if (hospitalstatus) return res.status(200).send("User Already Exist")
         const newhospital = new hospitalSchema(req.body)
         await newhospital.save()
+        console.log(newhospital);
         res.status(201).send({ message: "Medical Health of Customer added Sucessfully", success: true });
     } catch (error) {
         res.status(500).send({

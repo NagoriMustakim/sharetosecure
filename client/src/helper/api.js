@@ -1,14 +1,12 @@
 import axios from 'axios'
 import { getusername } from './username';
 // axios.defaults.baseURL = process.env.REACT_APP_DEV_SERVER;
-
-
+// import ethers from "ethers"
 export async function register(values) {
 
     try {
-        console.log(values);
         localStorage.setItem("username", values.firstname)
-       
+
         const data = await axios.post('http://localhost:4000/api/v1/user/register', values)
 
         return data.data

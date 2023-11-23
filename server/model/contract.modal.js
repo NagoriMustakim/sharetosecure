@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 
 const contractSchema = new mongoose.Schema({
     username:{type: String, require: true}, 
+    userwalletaddress: {type: String, require: true}, 
     aadhar: { type: String, require: true },
     sex: { type: String, require: true },
     bank: { type: String },
